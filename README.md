@@ -12,3 +12,5 @@
 * **Raw sequence data (ONT_MINION_raw.fastq)** - raw sequence reads generated from ONT Minion single sequencing run
 
 * **Blastn query hit table (ONT_MINION_blastn_table.csv)** - resulting data from NCBI blastn search of the nucleotide database includes molecular operational taxonomic unit identifiers (MOTU_ID), read number (reads), proportion of assigned reads (prop), taxonomic match (organism), sequence pairwise match (% Pairwise Identity), accession number (Accession), bit-score, e-value, query coverage (%), length (bp), grade (%), and sequence
+
+[![DOI](https://zenodo.org/badge/1054827145.svg)](https://doi.org/10.5281/zenodo.17099779)
