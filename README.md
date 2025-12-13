@@ -28,3 +28,7 @@ R scripts for processing qPCR data and generating figures are included in the /R
 
 ## Citation
 Please cite the associated manuscript when using these data.
+
+## License
+This repository is licensed under a Creative Commons Attribution 4.0 International License (CC BY 4.0).  
+See the LICENSE file for details.
