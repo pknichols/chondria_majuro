@@ -24,7 +24,12 @@ This repository contains raw and processed environmental DNA (eDNA) data, along 
 * **Blastn query hit table (ONT_MINION_blastn_table.csv)** - resulting data from NCBI blastn search of the nucleotide database includes molecular operational taxonomic unit identifiers (MOTU_ID), read number (reads), proportion of assigned reads (prop), taxonomic match (organism), sequence pairwise match (% Pairwise Identity), accession number (Accession), bit-score, e-value, query coverage (%), length (bp), grade (%), and sequence
 
 ## Scripts:
-R scripts for processing qPCR data and generating figures are included in the /R_scripts folder. Scripts require R version ≥4.2.0.
+R scripts for processing qPCR data and generating figures are included in the /R_scripts folder. Scripts require R version ≥4.2.0. Package versions are documented via `sessionInfo()` at the end of the R Markdown file.
+
+To reproduce the analysis:
+1. Clone or download this repository
+2. Open `analysis/chondria_detection.Rmd`
+3. Knit the document in RStudio
 
 ## Citation
 Please cite the associated manuscript when using these data.
