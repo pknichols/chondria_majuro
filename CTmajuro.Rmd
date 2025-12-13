@@ -1,0 +1,138 @@
+---
+title: "Chondria Detection Majuro"
+author: "Patrick Nichols"
+date: "12/13/2025"
+output: html_document
+---
+
+# 1. SETUP
+
+```{r setup, include=FALSE}
+set.seed(123)
+
+# Load required packages
+library(knitr)
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.path = "../output/figures/"
+)
+
+# Helper function: standard error
+st.err <- function(x) {
+  sd(x, na.rm = TRUE) / sqrt(sum(!is.na(x)))
+}
+```
+
+# 2. qPCR VISUALIZATION
+
+## A. Amplification Curves
+
+```{r import amplification data}
+qPCR.data=read.csv("data/raw/Quantification_Amplification_Results_SYBR.csv", header=T)
+qPCR.data$Cycle=as.numeric(as.character(qPCR.data$Cycle))
+qPCR.data$Site_ID <- as.character(qPCR.data$Site_ID)
+```
+
+### i. FIGURE Amplification Curve
+
+```{r plot amplification data}
+qPCR.sample.data=subset(qPCR.data, Region !="Control")
+amp.plot=ggplot(qPCR.sample.data, aes(x=Cycle, y=value)) + geom_point(alpha=0.05) + geom_smooth(method="gam", se=T, na.rm=T, color="black") + labs(x="Cycle", y="RFU", title=" ") + facet_wrap(~Site_ID)  + aes(color=Region)  + theme_bw() + guides(color=guide_legend(override.aes=list(fill=NA))) + theme(legend.position = "none")
+
+amp.plot
+```
+
+# 3. DNA COPIES BY SITE
+
+## A. Loading Cq Values
+
+```{r import Cq data}
+Cq.data=read.csv("data/raw/Quantification_Cq_Results_SYBR.csv", header=T)
+Cq.data$Cq.Mean=as.numeric(Cq.data$Cq.Mean)
+Cq.data$Cq=as.numeric(Cq.data$Cq)
+```
+
+## B. Copies per L
+
+```{r}
+Cq=subset(Cq.data, Atoll=="Majuro")
+Cq.narm <- Cq[!is.na(Cq$Site_ID) & Cq$Site_ID != "", ] #Remove passively sampled opportunistic sites without ID
+
+# methodological constants
+template_vol_ul <- 1      # µL template added to qPCR reaction
+elution_vol_ul  <- 100    # µL total extract volume
+water_filtered_L <- 2     # L seawater filtered
+
+# conversion factor
+conv_factor <- (elution_vol_ul / template_vol_ul) / water_filtered_L
+
+Cq.narm$copies_per_L <- Cq.narm$SQ.Mean * conv_factor
+
+#format data frame
+target.eDNA=as.data.frame(Cq.narm)
+target.eDNA=arrange(target.eDNA, Site_ID) ##order by Site
+target.eDNA= target.eDNA %>% dplyr::select(Sample, Replicate, Site_ID, qPCR_presence, SQ.Mean, copies_per_L)
+
+site_concentrations=ddply(target.eDNA, .(Site_ID), summarise, copies_uL=mean(SQ.Mean)/template_vol_ul, copies_uL_SE=st.err(SQ.Mean)/template_vol_ul, copies_L=mean(copies_per_L), copies_L_SE=st.err(copies_per_L))
+
+write.csv(
+  site_concentrations,
+  file = "data/processed/2DNAcopies_site.csv",
+  row.names = FALSE
+)
+```
+
+
+#4. MINION SEQUENCES
+
+## A. Load blastn data
+
+```{r}
+blast.table=read.csv("data/raw/ONT_MINION_blastn_table.csv", header=T) 
+blast.table$totalreads=sum(blast.table$reads)
+blast.table$propreads=blast.table$reads/blast.table$totalreads
+
+blast.table=ddply(blast.table, .(Organism), summarise, read_prop=sum(propreads))
+```
+
+##B. Plot reads
+
+```{r}
+propreads=ggplot(blast.table, aes(x=Organism, y = read_prop, fill=Organism)) +
+  ylim(0, 1) +
+  geom_bar(stat='identity', size = 1, position = position_dodge()) +
+  ylab("Read proportion") +
+  xlab(" ") +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1, size=10, color="black"),
+        axis.ticks.x=element_line(color="black", size=0.5, linetype="solid"),
+        axis.line.x=element_blank()) + scale_y_sqrt()
+propreads
+```
+
+
+# 5. NEGATIVE CONTROLS
+
+## A. Subset control samples
+
+```{r}
+##IDENTIFY CONTAMINATED SAMPLES
+Cq.neg=subset(Cq.data, Region=="Control")
+contamination=subset(Cq.neg, Cq.Mean>0 & Site_ID=="EB")
+contaminated=unique(contamination$SampleID)
+if(length(contaminated) > 0){
+  print(paste(contaminated, "is contaminated. Check the corresponding site!"))
+}
+```
+
+
+```{r session-info}
+sessionInfo()
+```
+
